@@ -4,7 +4,7 @@ version:
 Author: Six
 Date: 2021-06-05 14:43:47
 LastEditors: Six
-LastEditTime: 2021-06-05 21:20:13
+LastEditTime: 2021-06-14 22:52:01
 '''
 import logging
 import logging.config
@@ -12,7 +12,8 @@ from os import path
 import requests
 import queue
 
-from utils import getFQDN,baiduResult
+from utils import getFQDN,baiduResult, googleResult
+from googleAPI import hhpSearchGoogle
 
 logging.config.fileConfig("logging.conf")
 logger = logging.getLogger("hhp")
@@ -40,10 +41,14 @@ def isRedirection(url:str):
             # 同站点间的跳转，不记录
             if bdoamin != rdomain:
                 return 1, res.url,res.status_code
+            else:
+                return 0,url,res.status_code
         elif len(res.history) >0 and (url != res.history[-1].url):
             _,rhdomain,_,_ = getFQDN(res.history[-1].url)
             if bdoamin != rhdomain:
                 return 1, res.history[-1].url,res.status_code
+            else:
+                return 0,url,res.status_code
         else:
             return 0,url,res.status_code
     except Exception as e:
@@ -96,45 +101,60 @@ def resourceStrategy(url,results):
             if rpath[-1].split(".")[-1] == file_type:
                 ftc += 1
             paths.append(len(set(url[1:]).intersection(set(rpath[1:]))) / (len(rpath[1:])+1))
-    return 1, ftc / (len(results)+1) , sum(paths > 0.5) / len(url[1:])
+    return 1, ftc / (len(results)+1) , sum([1 for pi in paths if pi > 0.5]) / len(url[1:])
 
-def H2Phish(urls: queue) -> list:
-    logger.info("开始执行...")
+def H2Phish(url:str) -> int:
 
-    while urls.Empty():
-        url = urls.get()
-        isre, re_url,rcode = isRedirection(url)
-        fqdn_old,start_old = spGenerate(url)
-        if start_old!="":
-            keywords = ["site:"+fqdn_old,"inurl:"+start_old]
+    isre, re_url,rcode = isRedirection(url)
+    fqdn_old,start_old = spGenerate(url)
+    if start_old!="":
+        keywords = ["site:"+fqdn_old,"inurl:"+start_old]
+    else:
+        keywords = ["site:"+fqdn_old]
+    try:
+        # snum_old,results_old = baiduResult(keywords)
+        snum_old,results_old = googleResult(keywords)
+        # snum_old,results_old = hhpSearchGoogle(keywords)
+        snum_old = int(snum_old)
+    except Exception as e:
+        raise(e)
+        # if e.__str__()=="未获取到页面信息":
+        #     urls.put(url)
+    
+    # 对重定向的处理
+    if isre==1:
+        fqdn_re,start_re= spGenerate(re_url)
+        if start_re!="":
+            keywords = ["site:"+fqdn_re,"inurl:"+start_re]
         else:
-            keywords = ["site:"+fqdn_old]
-            snum_old,results_old = baiduResult(keywords)
+            keywords = ["site:"+fqdn_re]
+        try:
+            # snum_re,results_re = baiduResult(keywords)
+            snum_re,results_re = googleResult(keywords)
+            # snum_re,results_re = hhpSearchGoogle(keywords)
+            snum_re = int(snum_re)
+        except Exception as e:
+            print(e)
+            raise(e)
         
-        # 对重定向的处理
-        if isre:
-            fqdn_re,start_re= spGenerate(re_url)
-            if start_re!="":
-                keywords = ["site:"+fqdn_re,"inurl:"+start_re]
-            else:
-                keywords = ["site:"+fqdn_re]
-            snum_re,results_re = baiduResult(keywords)
+        # 索引策略
+        
+        if snum_old / (snum_re+1) > 50 or snum_re / (snum_old+1) > 50:
+            return 1  # 重定向钓鱼
+        elif snum_old ==0 or snum_re ==0:
+            return 2 # 普通钓鱼
 
-            # 索引策略
-            if snum_old / (snum_re+1) > 50 :
-                return 1  # 重定向钓鱼
-            elif snum_old ==0 or snum_re ==0:
-                return 2 # 普通钓鱼
-        else:
-            # 资源策略
-            isver,ftscore,rscore = resourceStrategy(url,results_old)
-            if isver:
-                if ftscore == 0:
-                    return 3 # 对于无法获取页面的站点，其文件类型存在异常，可能为挂马，判定为钓鱼
-                if rscore < 0.25 * len(results_old):
-                    return 4 # 
-            else:
-                return 0  # 正常
+    if snum_old ==0:
+        return 2 # 普通钓鱼
+    # 资源策略
+    isver,ftscore,rscore = resourceStrategy(url,results_old)
+    if isver:
+        if ftscore == 0:
+            return 3 # 对于无法获取页面的站点，其文件类型存在异常，可能为挂马，判定为钓鱼
+        if rscore < 0.25 * len(results_old):
+            return 4 # 
+    else:
+        return 0  # 正常
 
         
 
