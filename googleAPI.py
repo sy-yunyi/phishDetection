@@ -4,7 +4,7 @@ version:
 Author: Six
 Date: 2021-06-14 20:34:22
 LastEditors: Six
-LastEditTime: 2021-06-14 22:13:43
+LastEditTime: 2021-06-15 14:50:16
 '''
 import requests
 import configparser
@@ -32,6 +32,6 @@ def hhpSearchGoogle(keywords):
         print(e)
         return 0,[]
 
-snums, links = hhpSearchGoogle(["site:qq.com","inurl:login"])
-print(snums)
-print(links)
+# snums, links = hhpSearchGoogle(["site:qq.com","inurl:login"])
+# print(snums)
+# print(links)

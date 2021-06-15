@@ -4,7 +4,7 @@ version:
 Author: Six
 Date: 2021-06-06 19:02:42
 LastEditors: Six
-LastEditTime: 2021-06-14 22:52:33
+LastEditTime: 2021-06-15 15:46:20
 '''
 
 from pdb import main
@@ -33,7 +33,7 @@ logging.config.fileConfig("logging.conf")
 
 # logger.info("扩增数据结束...")
 
-with open(r"F:\phishDetection\raw_data\openphish.txt","r") as fp:
+with open(r"F:\phishDetection\raw_data\searchExtendURL.txt","r") as fp:
     lines = fp.readlines()
     org_domain = [line.strip() for line in lines]
 
@@ -58,7 +58,7 @@ while not domian_queue.empty():
         else:
             print(e)
             logger.info("失败"+" - "+url)
-with open("data/hhp_openphish_0615.txt","w",encoding="utf-8") as fp:
+with open("data/hhp_searchExtendURL_0615.txt","w",encoding="utf-8") as fp:
     for ri in results:
         fp.write(str(ri)+"\n")
 logger.info("detection end...")
