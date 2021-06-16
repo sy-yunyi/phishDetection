@@ -4,7 +4,7 @@ version:
 Author: Six
 Date: 2021-06-05 14:42:59
 LastEditors: Six
-LastEditTime: 2021-06-07 10:38:57
+LastEditTime: 2021-06-16 09:59:44
 '''
 import tldextract
 import requests
@@ -119,7 +119,7 @@ def googleResult(keywords):
         # 搜索结果数量
         # if "找不到和您查询的“{}”相符的内容或信息".format("%20".join(keywords)) in res.text:
         #     return 0,[]
-        
+        # pdb.set_trace()
         snums = pdom.xpath('//*[@id="result-stats"]/text()')
         
         if len(snums)==0:
@@ -132,7 +132,11 @@ def googleResult(keywords):
             # //*[@id="rso"]/div/div[5]/div/div[1]/a
         # pdb.set_trace()
         for ti in pdom.xpath('//*[@id="rso"]/div/div[1]'):
-            a_link = ti.xpath('./div[@class="yuRUbf"]/a/@href')
+            a_link = ti.xpath('./div/div[@class="yuRUbf"]/a/@href')
+            if a_link ==[]:
+                a_link = ti.xpath('./div/div/div[@class="yuRUbf"]/a/@href')
+            if a_link ==[]:
+                a_link = ti.xpath('./div[@class="yuRUbf"]/a/@href')
             if len(a_link)>0:
                 results.append(a_link[0])
         if len(results)==0:

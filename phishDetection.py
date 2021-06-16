@@ -4,7 +4,7 @@ version:
 Author: Six
 Date: 2021-06-06 19:02:42
 LastEditors: Six
-LastEditTime: 2021-06-15 15:46:20
+LastEditTime: 2021-06-16 21:56:34
 '''
 
 from pdb import main
@@ -21,7 +21,7 @@ from hhpImp import H2Phish
 logging.config.fileConfig("logging.conf")
 # logger = logging.getLogger("dataExtend")
 # logger.info("开始扩增数据...")
-# org_domain = pd.read_csv(r"F:\loading\phish\钓鱼检测方案二\code\data\Alexa-top-1m.csv",names=[0,1])[1].values[:1000]
+org_domain = pd.read_csv(r"F:\loading\phish\钓鱼检测方案二\code\data\Alexa-top-1m.csv",names=[0,1])[1].values[:10000]
 # for di in org_domain:
 #     url = validURL(di)
 #     # page_urls = pageExtend(url)
@@ -33,9 +33,11 @@ logging.config.fileConfig("logging.conf")
 
 # logger.info("扩增数据结束...")
 
-with open(r"F:\phishDetection\raw_data\searchExtendURL.txt","r") as fp:
-    lines = fp.readlines()
-    org_domain = [line.strip() for line in lines]
+# with open(r"F:\phishDetection\raw_data\pageExtendURL.txt","r",encoding="utf-8") as fp:
+#     lines = fp.readlines()
+#     org_domain = [line.strip() for line in lines]
+
+# org_domain = ["https://www.st.com/zh/ecosystems/aliyun.html"]
 
 logger = logging.getLogger("hhp")
 logger.info("detection start...")
@@ -58,7 +60,7 @@ while not domian_queue.empty():
         else:
             print(e)
             logger.info("失败"+" - "+url)
-with open("data/hhp_searchExtendURL_0615.txt","w",encoding="utf-8") as fp:
+with open("data/hhp_searchExtendURL_0616.txt","w",encoding="utf-8") as fp:
     for ri in results:
         fp.write(str(ri)+"\n")
 logger.info("detection end...")

@@ -4,13 +4,14 @@ version:
 Author: Six
 Date: 2021-06-05 14:43:47
 LastEditors: Six
-LastEditTime: 2021-06-14 22:52:01
+LastEditTime: 2021-06-16 10:02:03
 '''
 import logging
 import logging.config
 from os import path
 import requests
 import queue
+import configparser
 
 from utils import getFQDN,baiduResult, googleResult
 from googleAPI import hhpSearchGoogle
@@ -73,6 +74,9 @@ def spGenerate(url):
         return fqdn,url[findex+1]
 
 def resourceStrategy(url,results):
+    config = configparser.ConfigParser()
+    config.read('conf\project.conf')
+    file_types = config["filetype"]["types"]
     _,_,_,fqdn = getFQDN(url)
     url = url.split("?")[0] # 参数分割
     url = url.split("#")[0] # 锚点分割
@@ -83,12 +87,12 @@ def resourceStrategy(url,results):
         url=url[:-1]
     findex = url.index(fqdn)
     url = url[findex:]
-    
+    file_type = None
     if "." in url[-1]:
         file_type = url[-1].split(".")[-1]
     ftc = 0
 
-    if len(url) == 1 or (len(url)==2 and url[1]==""):
+    if len(url) == 1 or (len(url)==2 and url[1]==""): # 没有路径时
         return 0,0,0   # 资源策略是否有效，资源类型一致性，资源路径相似性
     else:
         paths = []
@@ -98,10 +102,13 @@ def resourceStrategy(url,results):
             if ":" in tmp[2]:
                 tmp[2] = tmp[2].split(":")[0]
             rpath = tmp[tmp.index(rfqdn):]
-            if rpath[-1].split(".")[-1] == file_type:
+            if file_type and rpath[-1].split(".")[-1] == file_type: 
                 ftc += 1
             paths.append(len(set(url[1:]).intersection(set(rpath[1:]))) / (len(rpath[1:])+1))
-    return 1, ftc / (len(results)+1) , sum([1 for pi in paths if pi > 0.5]) / len(url[1:])
+        if not file_type or file_type not in file_types:
+            return 2,0,sum([1 for pi in paths if pi >=0.2]) / len(url[1:])
+        else:
+            return 1, ftc / (len(results)+1) , sum([1 for pi in paths if pi >= 0.2]) / len(url[1:])
 
 def H2Phish(url:str) -> int:
 
@@ -146,15 +153,18 @@ def H2Phish(url:str) -> int:
 
     if snum_old ==0:
         return 2 # 普通钓鱼
+    if snum_old > 10000:
+        return 0
     # 资源策略
     isver,ftscore,rscore = resourceStrategy(url,results_old)
-    if isver:
+    if isver==1:
         if ftscore == 0:
             return 3 # 对于无法获取页面的站点，其文件类型存在异常，可能为挂马，判定为钓鱼
         if rscore < 0.25 * len(results_old):
             return 4 # 
-    else:
-        return 0  # 正常
+    elif isver==2 and rscore < 0.25 * len(results_old):
+        return 4 # 
+    return 0  # 正常
 
         
 
