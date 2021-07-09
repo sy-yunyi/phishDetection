@@ -21,7 +21,7 @@ from hhpImp import H2Phish
 logging.config.fileConfig("logging.conf")
 # logger = logging.getLogger("dataExtend")
 # logger.info("开始扩增数据...")
-org_domain = pd.read_csv(r"F:\loading\phish\钓鱼检测方案二\code\data\Alexa-top-1m.csv",names=[0,1])[1].values[:10000]
+org_domain = pd.read_csv(r"raw_data\Alexa-top-1m.csv",names=[0,1])[1].values[:10000]
 # for di in org_domain:
 #     url = validURL(di)
 #     # page_urls = pageExtend(url)
