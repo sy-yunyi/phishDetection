@@ -150,3 +150,45 @@ def googleResult(keywords):
     if snums == 0 or snums==[]:
         snums = len(results)
     return snums,results
+
+
+def extractTitle(response):
+    """
+    提取页面标题
+    输入为response对象
+    输出为标题或空
+    """
+    et = etree.HTML(response.text)
+    if et:
+        title = et.xpath("/html/head/title/text()")
+        if len(title)>0:
+            return title[0].strip()
+    else:
+        return ""
+
+def extractURL(response):
+    et = etree.HTML(response.text)
+    if et:
+        a_link = et.xpath('//*/a/@href')
+        style_link = et.xpath('//*/link/@href')
+        js_link = et.xpath('//*/script/@src')
+        image_link = et.xpath('//*/img/@src')
+        return a_link,style_link,js_link,image_link
+    else:
+        return [],[],[],[]
+
+def pathDomain(url,domain,fqdn,urls):
+    pUrl = 0
+    pDomain = 0
+    pFqdn = 0
+    for ui in urls:
+        _,udomain,_,ufqdn = getFQDN(ui)
+        if udomain == domain:
+            pDomain = 1
+        if fqdn == ufqdn:
+            pFqdn = 1
+        if url == ui:
+            pUrl = 1
+        if pUrl and pDomain and pFqdn:
+            return 1,1,1
+    return pUrl,pDomain,pFqdn

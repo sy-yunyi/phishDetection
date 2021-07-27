@@ -57,6 +57,29 @@ def isRedirection(url:str):
         logger.info(e.__str__())
         return 2,url,0
 
+def isRedirectionV2(url:str):
+    """
+    对url重定向情况进行判定。 [更新使用head方法，更快进行判定]
+    非重定向 - > 0 , url, rcode
+    重定向 - >   1 , 重定向后的URL, rcode
+    无法判定 - > 2 , url, 0
+    """
+    proxies = {
+        "https":"https://127.0.0.1:1080",
+        "http":"http://127.0.0.1:1080"
+    }
+    try:
+        res = requests.head(url,proxies=proxies,timeout=20,verify=False)
+        if res.status_code >= 300 and res.status_code <400:
+            return 1, res.url,res.status_code
+        else:
+            return 0,url,res.status_code
+    except Exception as e:
+        logger.info("{}，重定向情况无法判定。".format(url))
+        logger.info(e.__str__())
+        return 2,url,0
+
+
 def spGenerate(url):
     """
     搜索模式生成
