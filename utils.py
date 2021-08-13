@@ -9,7 +9,10 @@ LastEditTime: 2021-06-16 09:59:44
 import tldextract
 import requests
 from lxml import etree
+import hashlib
 import re
+import os
+import json
 import time
 import pdb
 
@@ -33,6 +36,24 @@ def validURL(url):
     return url
 
 
+def searchData(res_id,results=None):
+    
+    resource_path = "data\searchData.json"
+    if not os.path.exists(resource_path):
+        with open(resource_path,"w") as fp:
+            fp.write("/{/}")
+    with open(resource_path,"r",encoding="utf-8") as fp:
+        res_data = json.load(fp)
+    if results:
+        res_data[res_id]=results
+        with open(resource_path,"w") as fp:
+            json.dump(res_data,fp)
+        return 3,results  # 更新数据
+    else:
+        if res_data.get(res_id,0)==0:
+            return 0,[]  # 没有数据
+        else:
+            return 1,res_data.get(res_id)  # 有数据
 
 
 def baiduResult(keywords):
@@ -104,7 +125,7 @@ def googleResult(keywords):
         "cookie": "CGIC=IocBdGV4dC9odG1sLGFwcGxpY2F0aW9uL3hodG1sK3htbCxhcHBsaWNhdGlvbi94bWw7cT0wLjksaW1hZ2UvYXZpZixpbWFnZS93ZWJwLGltYWdlL2FwbmcsKi8qO3E9MC44LGFwcGxpY2F0aW9uL3NpZ25lZC1leGNoYW5nZTt2PWIzO3E9MC45; CONSENT=YES+CZ.zh-CN+V14+B; HSID=AlKhsHkvVQc-G0yAd; SSID=A6oep-SbgnQOCe-Qh; APISID=cCLLK1EZUnwHtkTb/A3I7q3OUYLrAO_XmF; SAPISID=lPSaf9brvjF9cMhk/AvYG4DA-97h085Qyz; __Secure-3PAPISID=lPSaf9brvjF9cMhk/AvYG4DA-97h085Qyz; ANID=AHWqTUk2PKMnqD29EabCDntmmpRMkpk5xxC-japuLc634kFNc2BH31F-cLgoIvLa; SID=6gemR0p6g8xOvpFC055Uhkb3RcIlMvQjyiY5BFydunW09fEWnmJMZtnteZqlwmvdqqX15Q.; __Secure-3PSID=6gemR0p6g8xOvpFC055Uhkb3RcIlMvQjyiY5BFydunW09fEWVYdKEd12m5i9JzBFFrrJ6A.; OTZ=5855851_24_24__24_; SEARCH_SAMESITE=CgQIgJIB; NID=210=CA3WsRmItuAI8GvCNM7bCR2Q_SQ5CBz6HBBoH9kUoLzN0Sd6czPorLkFYNlv7AamWmJekBrQwdh-CWyvsNaGnkE4_SP4BRhWfzpu5NAmU8bq-MAmbFTPovMrniGJJTzQ8Q4NAws-eb5IALAvlDStYZAyqNcN-Mh4hoXk1hSOvQYsjdlVD-w1ieB2HSZMEfpA1V6QUZ3suWtVtzURx-IVChejyPdpa0BC1mg9OfL_2nkd1AL8e1jzAi2-1D4d8fxogmPEfspU12wCdyzIkeuKCdIfnPy81DRbvBnYCmfmxMdPH1VVHdym2D-m; 1P_JAR=2021-03-03-03; DV=0yOaKFvtlytKcKt5a0Qc82LiPpJhfxewjap4JjqDLAIAAGD139BTnYWQ1wAAAASIm0L1K13fOQAAAA; SIDCC=AJi4QfFLa-UryKz6UXjSs6WzfbuimfZf1NCr4L563fCB1UZ0fQExY3xlwh1T8OuNNQt2J3U84f4; __Secure-3PSIDCC=AJi4QfFFbq7U2SdYn-4ce4F5Z9V_ck3tgaqQ-awVC_fcFpDek2CCZLYThjWDEik7KOiyMKULOzE",
         }
     proxies = {
-    "https": "https://127.0.0.1:1080",
+    "https": "http://127.0.0.1:1080",
     "http": "http://127.0.0.1:1080"
             }
     url = "https://google.com/search?source=hp&q={}&num=20&ie=UTF-8&filter=0".format("%20".join(keywords))
@@ -152,27 +173,38 @@ def googleResult(keywords):
     return snums,results
 
 
-def extractTitle(response):
+def extractTitle(response,type="URL"):
     """
     提取页面标题
     输入为response对象
     输出为标题或空
     """
-    et = etree.HTML(response.text)
-    if et:
-        title = et.xpath("/html/head/title/text()")
-        if len(title)>0:
-            return title[0].strip()
+    if type=="URL":
+        dom = etree.HTML(response.text)
+    else:
+        dom = etree.HTML(response)
+    if dom:
+        try:
+            title = dom.xpath("/html/head/title/text()")
+            if len(title)>0:
+                return title[0].strip()
+            else:
+                return ""
+        except:
+            return ""
     else:
         return ""
 
-def extractURL(response):
-    et = etree.HTML(response.text)
-    if et:
-        a_link = et.xpath('//*/a/@href')
-        style_link = et.xpath('//*/link/@href')
-        js_link = et.xpath('//*/script/@src')
-        image_link = et.xpath('//*/img/@src')
+def extractURL(response,type="URL"):
+    if type=="URL":
+        dom = etree.HTML(response.text)
+    else:
+        dom = etree.HTML(response)
+    if dom:
+        a_link = dom.xpath('//*/a/@href')
+        style_link = dom.xpath('//*/link/@href')
+        js_link = dom.xpath('//*/script/@src')
+        image_link = dom.xpath('//*/img/@src')
         return a_link,style_link,js_link,image_link
     else:
         return [],[],[],[]

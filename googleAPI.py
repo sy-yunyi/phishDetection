@@ -30,7 +30,7 @@ def hhpSearchGoogle(keywords):
         return snums,search_links
     except Exception as e:
         print(e)
-        return 0,[]
+        return -1,[]
 
 # snums, links = hhpSearchGoogle(["site:qq.com","inurl:login"])
 # print(snums)
