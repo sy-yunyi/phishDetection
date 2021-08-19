@@ -13,8 +13,13 @@ import hashlib
 import re
 import os
 import json
+import threading
 import time
 import pdb
+
+
+lock = threading.Lock()
+
 
 def getFQDN(domain):
     d_info = tldextract.extract(domain)
@@ -36,24 +41,31 @@ def validURL(url):
     return url
 
 
-def searchData(res_id,results=None):
-    
-    resource_path = "data\searchData.json"
-    if not os.path.exists(resource_path):
-        with open(resource_path,"w") as fp:
-            fp.write("/{/}")
-    with open(resource_path,"r",encoding="utf-8") as fp:
-        res_data = json.load(fp)
-    if results:
-        res_data[res_id]=results
-        with open(resource_path,"w") as fp:
-            json.dump(res_data,fp)
-        return 3,results  # 更新数据
-    else:
-        if res_data.get(res_id,0)==0:
-            return 0,[]  # 没有数据
+def searchData(res_id,results=None,resource_path= "data\searchData.json"):
+    try:
+        lock.acquire()
+        # resource_path = "data\searchData.json"
+        if not os.path.exists(resource_path):
+            with open(resource_path,"w") as fp:
+                fp.write("/{/}")
+        with open(resource_path,"r",encoding="utf-8") as fp:
+            res_data = json.load(fp)
+        if results:
+            res_data[res_id]=results
+            with open(resource_path,"w") as fp:
+                json.dump(res_data,fp)
+            lock.release()
+            return 3,results  # 更新数据
         else:
-            return 1,res_data.get(res_id)  # 有数据
+            lock.release()
+            if res_data.get(res_id,0)==0:
+                return 0,[]  # 没有数据
+            else:
+                return 1,res_data.get(res_id)  # 有数据
+    except Exception as e:
+        lock.release()
+        print(e)
+        return 0,[]
 
 
 def baiduResult(keywords):
@@ -128,7 +140,7 @@ def googleResult(keywords):
     "https": "http://127.0.0.1:1080",
     "http": "http://127.0.0.1:1080"
             }
-    url = "https://google.com/search?source=hp&q={}&num=20&ie=UTF-8&filter=0".format("%20".join(keywords))
+    url = "http://google.com/search?source=hp&q={}&num=20&ie=UTF-8&filter=0".format("%20".join(keywords))
     # &ei=lEXgX4DBG4OxmAXq052oCQ
     print(url)
     # try:

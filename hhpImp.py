@@ -11,9 +11,10 @@ import logging.config
 from os import path
 import requests
 import queue
+import hashlib
 import configparser
 
-from utils import getFQDN,baiduResult, googleResult
+from utils import getFQDN,baiduResult, googleResult,searchData
 from googleAPI import hhpSearchGoogle
 
 logging.config.fileConfig("logging.conf")
@@ -31,7 +32,7 @@ def isRedirection(url:str):
     无法判定 - > 2 , url, 0
     """
     proxies = {
-        "https":"https://127.0.0.1:1080",
+        "https":"http://127.0.0.1:1080",
         "http":"http://127.0.0.1:1080"
     }
     try:
@@ -142,10 +143,15 @@ def H2Phish(url:str) -> int:
     else:
         keywords = ["site:"+fqdn_old]
     try:
-        # snum_old,results_old = baiduResult(keywords)
-        snum_old,results_old = googleResult(keywords)
-        # snum_old,results_old = hhpSearchGoogle(keywords)
-        snum_old = int(snum_old)
+        res_id = hashlib.md5((url+"-".join(keywords)).encode()).hexdigest()
+        status_code,results_old = searchData(res_id,resource_path="data/hhp_search.json")
+        if status_code ==0:
+            # snum_old,results_old = baiduResult(keywords)
+            # snum_old,results_old = googleResult(keywords)
+            snum_old,results_old = hhpSearchGoogle(keywords)
+            snum_old = int(snum_old)
+            if len(results_old)>0:
+                searchData(res_id,results=results_old,resource_path="data/hhp_search.json")
     except Exception as e:
         raise(e)
         # if e.__str__()=="未获取到页面信息":
@@ -159,10 +165,15 @@ def H2Phish(url:str) -> int:
         else:
             keywords = ["site:"+fqdn_re]
         try:
-            # snum_re,results_re = baiduResult(keywords)
-            snum_re,results_re = googleResult(keywords)
-            # snum_re,results_re = hhpSearchGoogle(keywords)
-            snum_re = int(snum_re)
+            res_id = hashlib.md5((url+"-".join(keywords)).encode()).hexdigest()
+            status_code,results_re = searchData(res_id,resource_path="data/hhp_search.json")
+            if status_code==0:
+                # snum_re,results_re = baiduResult(keywords)
+                # snum_re,results_re = googleResult(keywords)
+                snum_re,results_re = hhpSearchGoogle(keywords)
+                snum_re = int(snum_re)
+                if len(results_re)>0:
+                    searchData(res_id,results=results_re,resource_path="data/hhp_search.json")
         except Exception as e:
             print(e)
             raise(e)
@@ -170,24 +181,24 @@ def H2Phish(url:str) -> int:
         # 索引策略
         
         if snum_old / (snum_re+1) > 50 or snum_re / (snum_old+1) > 50:
-            return 1  # 重定向钓鱼
+            return 1,snum_old  # 重定向钓鱼
         elif snum_old ==0 or snum_re ==0:
-            return 2 # 普通钓鱼
+            return 2,snum_old # 普通钓鱼
 
     if snum_old ==0:
-        return 2 # 普通钓鱼
-    if snum_old > 10000:
-        return 0
+        return 2,snum_old # 普通钓鱼
+    if snum_old > 5000:
+        return 0,snum_old
     # 资源策略
     isver,ftscore,rscore = resourceStrategy(url,results_old)
     if isver==1:
         if ftscore == 0:
-            return 3 # 对于无法获取页面的站点，其文件类型存在异常，可能为挂马，判定为钓鱼
+            return 3,snum_old # 对于无法获取页面的站点，其文件类型存在异常，可能为挂马，判定为钓鱼
         if rscore < 0.25 * len(results_old):
-            return 4 # 
+            return 4,snum_old # 
     elif isver==2 and rscore < 0.25 * len(results_old):
-        return 4 # 
-    return 0  # 正常
+        return 4,snum_old # 
+    return 0,snum_old  # 正常
 
         
 

@@ -2,8 +2,14 @@ from jail import jailPhish
 from pandas.core import base
 from ldpImp import LDP
 import os
+import time
 import pandas as pd
+from tqdm import tqdm
+from queue import Queue
+import threading
 import base64
+
+
 
 
 def pediaData(type="phish"):
@@ -39,14 +45,62 @@ def pediaData(type="phish"):
 
 
 
+def getTest():
+    file_path = r"G:\bak\hp-f\phishDetection\data\normal_final.csv"
+    df = pd.read_csv(file_path)
+    return df['dir'].values,df['url'].values
 
-if __name__=="__main__":
-    data = pediaData(type="normal")
-    for di in data:
+
+# r"F:\研究方案\钓鱼检测框架-PhishTotal\Phishpedia\phish_sample_30k"
+# def pediaData_v2(type="phish"):
+#     dirs,urls = getTest()
+
+def detect_exec(data_queue):
+    data_path = r"F:\研究方案\钓鱼检测框架-PhishTotal\Phishpedia\benign_sample_30k"
+    while(not data_queue.empty()):
+        item = data_queue.get()
+        url,dir = item[1],item[0]
+        if url in open(r"G:\bak\hp-f\phishDetection\jail_normal.txt","r",encoding="ISO-8859-1").read():
+            print("have done")
+            continue
+        fp_pre = open("jail_normal.txt","a+")
         try:
-            # print(LDP(di[0],di[1],type="file"))
-            print(jailPhish(di[0],di[1],type="file"))
+            dir.replace("<token>",",")
+            url.replace("<token>",",")
+            print(url)
+            # print(LDP(ui,os.path.join(os.path.join(data_path,di),"html.txt"),type="file"))
+            res = jailPhish(url,os.path.join(os.path.join(data_path,dir),"html.txt"),type="file")
+            print(res)
+            fp_pre.write(url+"\t"+dir+"\t"+str(res)+"\t"+"detection"+"\n")
         except Exception as e:
             if e.__str__()=="未获取到页面信息":
-                pass  # 搜索引擎屏蔽
+                time.sleep(5)
+                # 搜索引擎屏蔽
+            print(e)
+            fp_pre.write(url+"\t"+dir+"\t"+str(3)+"\t"+str(e)+"\n")
+        fp_pre.close()
+
+
+
+if __name__=="__main__":
+    # data = pediaData_v2(type="normal")
+    
+    dirs,urls = getTest()
+    dataq = Queue()
+    
+    for di,ui in tqdm(zip(dirs,urls)):
+        dataq.put([di,ui])
+
+    t_list = []
+    for i in range(12  c :
+        t = threading.Thread(target=detect_exec, args=(dataq,))
+        t.start()
+        t_list.append(t)
+    
+    for ti in t_list:
+        ti.join()
+    
+    
+    
+    
 

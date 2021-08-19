@@ -20,8 +20,14 @@ def jailJudge(url,path,results,type="URL"):
     query_image_link = []
     for ri in results:
         try:
-            res_u = requests.get(ri,proxies=proxies)
-            au_link,styleu_link,jsu_link,imageu_link = extractURL(res_u,type="URL")
+            res_id2 = hashlib.md5((ri+url).encode()).hexdigest()
+            status_code,results = searchData(res_id2)
+            if status_code==0:
+                res_u = requests.get(ri,proxies=proxies)
+                au_link,styleu_link,jsu_link,imageu_link = extractURL(res_u,type="URL")
+                searchData(res_id2,[au_link,styleu_link,jsu_link,imageu_link])
+            else:
+                au_link,styleu_link,jsu_link,imageu_link =results[0],results[1],results[2],results[3]
             query_a_link.extend(au_link)
             query_style_link.extend(styleu_link)
             query_js_link.extend(jsu_link)
@@ -51,10 +57,14 @@ def jailPhish(url,path=None,type="URL"):
     res_id = hashlib.md5((url+"-".join(keywords)).encode()).hexdigest()
     status_code,results = searchData(res_id)
     if status_code ==0 :
-        snums,results = googleResult(keywords)
+        try:
+            snums,results = googleResult(keywords)
+        except Exception as e:
+            raise(e)
         searchData(res_id,results=results)
     if len(results)>=10:
         results = results[:10]
+    print(res_id)
     pUrl,pDomain,pFqdn = pathDomain(url,domain,fqdn,results)
     if pUrl:
         return 0

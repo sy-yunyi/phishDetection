@@ -17,7 +17,7 @@ def hhpSearchGoogle(keywords):
     api_cx = config["googleapi"]["cx"]
     url = r"https://customsearch.googleapis.com/customsearch/v1?key={key}&q={st}&cx={cx}".format(key=api_key,st="%20".join(keywords),cx=api_cx)
     proxies = {
-    "https": "https://127.0.0.1:1080",
+    "https": "http://127.0.0.1:1080",
     "http": "http://127.0.0.1:1080"
             }
     search_links = []
@@ -27,6 +27,7 @@ def hhpSearchGoogle(keywords):
             snums = res.json()["searchInformation"]["totalResults"]
             for li in res.json()["items"]:
                 search_links.append(li["link"])
+        print("google API status code :{}".format(res.status_code))
         return snums,search_links
     except Exception as e:
         print(e)
