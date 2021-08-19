@@ -130,9 +130,9 @@ def resourceStrategy(url,results):
                 ftc += 1
             paths.append(len(set(url[1:]).intersection(set(rpath[1:]))) / (len(rpath[1:])+1))
         if not file_type or file_type not in file_types:
-            return 2,0,sum([1 for pi in paths if pi >=0.2]) / len(url[1:])
+            return 2,0,sum([1 for pi in paths if pi >=0.2]) / (len(url[1:])+1)
         else:
-            return 1, ftc / (len(results)+1) , sum([1 for pi in paths if pi >= 0.2]) / len(url[1:])
+            return 1, ftc / (len(results)+1) , sum([1 for pi in paths if pi >= 0.2]) / (len(url[1:])+1)
 
 def H2Phish(url:str) -> int:
 
@@ -145,6 +145,7 @@ def H2Phish(url:str) -> int:
     try:
         res_id = hashlib.md5((url+"-".join(keywords)).encode()).hexdigest()
         status_code,results_old = searchData(res_id,resource_path="data/hhp_search.json")
+        snum_old = len(results_old)
         if status_code ==0:
             # snum_old,results_old = baiduResult(keywords)
             # snum_old,results_old = googleResult(keywords)
@@ -153,6 +154,7 @@ def H2Phish(url:str) -> int:
             if len(results_old)>0:
                 searchData(res_id,results=results_old,resource_path="data/hhp_search.json")
     except Exception as e:
+        print(e)
         raise(e)
         # if e.__str__()=="未获取到页面信息":
         #     urls.put(url)
@@ -167,6 +169,7 @@ def H2Phish(url:str) -> int:
         try:
             res_id = hashlib.md5((url+"-".join(keywords)).encode()).hexdigest()
             status_code,results_re = searchData(res_id,resource_path="data/hhp_search.json")
+            snum_re = len(results_re)
             if status_code==0:
                 # snum_re,results_re = baiduResult(keywords)
                 # snum_re,results_re = googleResult(keywords)
@@ -180,7 +183,7 @@ def H2Phish(url:str) -> int:
         
         # 索引策略
         
-        if snum_old / (snum_re+1) > 50 or snum_re / (snum_old+1) > 50:
+        if (snum_old / (snum_re+1) > 50 or snum_re / (snum_old+1) > 50):
             return 1,snum_old  # 重定向钓鱼
         elif snum_old ==0 or snum_re ==0:
             return 2,snum_old # 普通钓鱼

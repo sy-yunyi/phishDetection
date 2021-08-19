@@ -25,13 +25,16 @@ def hhpSearchGoogle(keywords):
         res = requests.get(url,proxies=proxies,timeout=10)
         if res.status_code==200:
             snums = res.json()["searchInformation"]["totalResults"]
-            for li in res.json()["items"]:
-                search_links.append(li["link"])
+            if snums!="0":
+                for li in res.json()["items"]:
+                    search_links.append(li["link"])
         print("google API status code :{}".format(res.status_code))
+        if res.status_code==429:
+            exit()
         return snums,search_links
     except Exception as e:
         print(e)
-        return -1,[]
+        return -100,[]
 
 # snums, links = hhpSearchGoogle(["site:qq.com","inurl:login"])
 # print(snums)

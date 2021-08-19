@@ -81,24 +81,40 @@ def detect_exec(data_queue):
         fp_pre.close()
 
 
+def dataClean():
+    file_path =r"data/hhp_normal.txt"
+    with open(file_path,"r",encoding="utf-8") as fp:
+        lines = fp.readlines()
+        lines = [line.strip().split("\t") for line in lines]
+        lines = [line for line in lines if line[3]!="-1"]
+        lines = [line for line in lines if line[2]!="3"]
+        lines = [line for line in lines if line[2]!="1"]
+    with open(file_path,"w",encoding="utf-8") as fp:
+        for line in lines:
+            fp.write("\t".join(line)+"\n")
+
+
 
 if __name__=="__main__":
     # data = pediaData_v2(type="normal")
     
-    dirs,urls = getTest()
-    dataq = Queue()
-    
-    for di,ui in tqdm(zip(dirs,urls)):
-        dataq.put([di,ui])
+    dataClean()
 
-    t_list = []
-    for i in range(12  c :
-        t = threading.Thread(target=detect_exec, args=(dataq,))
-        t.start()
-        t_list.append(t)
+
+    # dirs,urls = getTest()
+    # dataq = Queue()
     
-    for ti in t_list:
-        ti.join()
+    # for di,ui in tqdm(zip(dirs,urls)):
+    #     dataq.put([di,ui])
+
+    # t_list = []
+    # for i in range(12):
+    #     t = threading.Thread(target=detect_exec, args=(dataq,))
+    #     t.start()
+    #     t_list.append(t)
+    
+    # for ti in t_list:
+    #     ti.join()
     
     
     

@@ -25,11 +25,12 @@ def detect_exec(data_queue):
     while(not data_queue.empty()):
         item = data_queue.get()
         url,dir = item[1],item[0]
+        link_nums = 0
         if type(url)!=str:
             continue
         url = validURL(url)
-        fp_pre = open("hhp_normal.txt","a+")
-        if url in open(r"G:\bak\hp-f\phishDetection\hhp_normal.txt","r",encoding="ISO-8859-1").read():
+        fp_pre = open(r"data\hhp_normal.txt","a+")
+        if url in open(r"G:\bak\hp-f\phishDetection\data\hhp_normal.txt","r",encoding="ISO-8859-1").read():
             print("have done\n")
             continue
         try:
@@ -47,7 +48,7 @@ def detect_exec(data_queue):
             else:
                 print(e)
                 # 搜索引擎屏蔽
-            fp_pre.write(url+"\t"+dir+"\t"+str(3)+"\t"+str(link_nums)+"\t"+str(e)+"\n")
+            fp_pre.write(url+"\t"+dir+"\t"+str(10)+"\t"+str(link_nums)+"\t"+str(e)+"\n")
         fp_pre.close()
 def test():
     # 数据扩增
@@ -123,7 +124,7 @@ if __name__=="__main__":
     file_dirs,file_urls = getTestData()
     for di,ui in zip(file_dirs,file_urls):
         domian_queue.put([di,ui])
-    NUM = 5
+    NUM = 1
     detecTheads(detect_exec,NUM,domian_queue)
 
 
