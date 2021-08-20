@@ -13,6 +13,8 @@ import requests
 import queue
 import hashlib
 import configparser
+import redis
+import json
 
 from utils import getFQDN,baiduResult, googleResult,searchData
 from googleAPI import hhpSearchGoogle
@@ -22,6 +24,7 @@ logger = logging.getLogger("hhp")
 
 # logger.info("info message")
 
+pool = redis.ConnectionPool(host="127.0.0.1",port=6379,db=1,password="si1ex")
 
 
 def isRedirection(url:str):
@@ -54,6 +57,7 @@ def isRedirection(url:str):
         else:
             return 0,url,res.status_code
     except Exception as e:
+        print(e)
         logger.info("{}，重定向情况无法判定。".format(url))
         logger.info(e.__str__())
         return 2,url,0
@@ -138,21 +142,27 @@ def H2Phish(url:str) -> int:
 
     isre, re_url,rcode = isRedirection(url)
     fqdn_old,start_old = spGenerate(url)
+    resdb = redis.Redis(connection_pool=pool)
     if start_old!="":
         keywords = ["site:"+fqdn_old,"inurl:"+start_old]
     else:
         keywords = ["site:"+fqdn_old]
     try:
         res_id = hashlib.md5((url+"-".join(keywords)).encode()).hexdigest()
-        status_code,results_old = searchData(res_id,resource_path="data/hhp_search.json")
-        snum_old = len(results_old)
-        if status_code ==0:
+        # status_code,results_old = searchData(res_id,resource_path="data/hhp_search.json")
+        # snum_old = len(results_old)
+        if not resdb.get(res_id):
             # snum_old,results_old = baiduResult(keywords)
             # snum_old,results_old = googleResult(keywords)
             snum_old,results_old = hhpSearchGoogle(keywords)
             snum_old = int(snum_old)
             if len(results_old)>0:
-                searchData(res_id,results=results_old,resource_path="data/hhp_search.json")
+                # searchData(res_id,results=results_old,resource_path="data/hhp_search.json")
+                resdb.set(res_id,json.dumps({"links":results_old,"lnum":snum_old}))
+        else:
+            sdata = json.loads(resdb.get(res_id))
+            results_re = sdata["links"]
+            snum_re = sdata["lnum"]
     except Exception as e:
         print(e)
         raise(e)
@@ -168,15 +178,18 @@ def H2Phish(url:str) -> int:
             keywords = ["site:"+fqdn_re]
         try:
             res_id = hashlib.md5((url+"-".join(keywords)).encode()).hexdigest()
-            status_code,results_re = searchData(res_id,resource_path="data/hhp_search.json")
-            snum_re = len(results_re)
-            if status_code==0:
+            # status_code,results_re = searchData(res_id,resource_path="data/hhp_search.json")
+            if not resdb.get(res_id):
                 # snum_re,results_re = baiduResult(keywords)
                 # snum_re,results_re = googleResult(keywords)
                 snum_re,results_re = hhpSearchGoogle(keywords)
                 snum_re = int(snum_re)
                 if len(results_re)>0:
-                    searchData(res_id,results=results_re,resource_path="data/hhp_search.json")
+                    resdb.set(res_id,json.dumps({"links":results_re,"lnum":snum_re}))
+            else:
+                sdata = json.loads(resdb.get(res_id))
+                results_re = sdata["links"]
+                snum_re = sdata["lnum"]
         except Exception as e:
             print(e)
             raise(e)
