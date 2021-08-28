@@ -8,7 +8,7 @@ import redis
 import json
 
 
-pool = redis.ConnectionPool(host="127.0.0.1",port=6379,db=1,password="si1ex")
+pool = redis.ConnectionPool(host="127.0.0.1",port=6379,db=1)
 # type 为file 和url ，url 表示需要主动请求获取页面数据，file 则为输入为页面文件，直接进行解析
 def LDP(url,path = None,type="URL"):
     """

@@ -46,7 +46,7 @@ def pediaData(type="phish"):
 
 
 def getTest():
-    file_path = r"data\phish_final.csv"
+    file_path = r"data\normal_final.csv"
     df = pd.read_csv(file_path)
     return df['dir'].values,df['url'].values
 
@@ -54,12 +54,14 @@ def getTest():
 # r"F:\研究方案\钓鱼检测框架-PhishTotal\Phishpedia\phish_sample_30k"
 # def pediaData_v2(type="phish"):
 #     dirs,urls = getTest()
-out_results = r"data\ldp_phish.txt"
+out_results = r"data\jail_normal.txt"
 def detect_exec(data_queue):
-    data_path = r"D:\datasets\pedia\phish_sample_30k"
+    data_path = r"D:\datasets\pedia\benign_sample_30k"
     while(not data_queue.empty()):
         item = data_queue.get()
         url,dir = item[1],item[0]
+        if type(url) != str:
+            continue
         if url in open(out_results,"r",encoding="ISO-8859-1").read():
             print("have done")
             continue
@@ -69,28 +71,29 @@ def detect_exec(data_queue):
             url = url.replace("<token>",",")
             print(url)
             # print(LDP(ui,os.path.join(os.path.join(data_path,di),"html.txt"),type="file"))
-            # res = jailPhish(url,os.path.join(os.path.join(data_path,dir),"html.txt"),type="file")
-            res = LDP(url,os.path.join(os.path.join(data_path,dir),"html.txt"),type="file")
+            res = jailPhish(url,os.path.join(os.path.join(data_path,dir),"html.txt"),type="file")
+            # res = LDP(url,os.path.join(os.path.join(data_path,dir),"html.txt"),type="file")
             print(res)
             fp_pre.write(url+"\t"+dir+"\t"+str(res)+"\t"+"detection"+"\n")
             time.sleep(5)
         except Exception as e:
             if e.__str__()=="未获取到页面信息":
                 time.sleep(20)
+                # exit()
                 # 搜索引擎屏蔽
             print(e)
-            data_queue.put(url)
+            data_queue.put(item)
             # fp_pre.write(url+"\t"+dir+"\t"+str(10)+"\t"+str(e).strip()+"\n")
         fp_pre.close()
 
 
 def dataClean():
-    file_path =r"data/ldp_phish.txt"
+    file_path =r"data/hhp_normal.txt"
     with open(file_path,"r",encoding="gbk") as fp:
         lines = fp.readlines()
         lines = [line.strip().split("\t") for line in lines]
-        # lines = [line for line in lines if line[3]!="-1"]
-        lines = [line for line in lines if (line[2]=="1" or line[2]=="0")]
+        lines = [line for line in lines if line[3]!="-100"]
+        # lines = [line for line in lines if (line[2]=="1" or line[2]=="0")]
         # lines = [line for line in lines if line[2]!="1"]
     with open(file_path,"w",encoding="utf-8") as fp:
         for line in lines:

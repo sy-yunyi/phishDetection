@@ -24,7 +24,7 @@ logger = logging.getLogger("hhp")
 
 # logger.info("info message")
 
-pool = redis.ConnectionPool(host="127.0.0.1",port=6379,db=1,password="si1ex")
+pool = redis.ConnectionPool(host="127.0.0.1",port=6379,db=2)
 
 
 def isRedirection(url:str):
@@ -140,7 +140,7 @@ def resourceStrategy(url,results):
 
 def H2Phish(url:str) -> int:
 
-    isre, re_url,rcode = isRedirection(url)
+    isre, re_url,rcode = isRedirectionV2(url)
     fqdn_old,start_old = spGenerate(url)
     resdb = redis.Redis(connection_pool=pool)
     if start_old!="":

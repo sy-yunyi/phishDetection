@@ -21,7 +21,7 @@ from hhpImp import H2Phish
 
 
 def detect_exec(data_queue):
-    data_path = r"F:\研究方案\钓鱼检测框架-PhishTotal\Phishpedia\benign_sample_30k"
+    # data_path = r"D:\datasets\pedia\phish_sample_30k"
     while(not data_queue.empty()):
         item = data_queue.get()
         url,dir = item[1],item[0]
@@ -29,13 +29,13 @@ def detect_exec(data_queue):
         if type(url)!=str:
             continue
         url = validURL(url)
-        fp_pre = open(r"data\hhp_normal.txt","a+")
-        if url in open(r"G:\bak\hp-f\phishDetection\data\hhp_normal.txt","r",encoding="ISO-8859-1").read():
+        fp_pre = open(r"data\hhp_phish.txt","a+")
+        if url in open(r"data\hhp_phish.txt","r",encoding="ISO-8859-1").read():
             print("have done\n")
             continue
         try:
-            dir.replace("<token>",",")
-            url.replace("<token>",",")
+            dir = dir.replace("<token>",",")
+            url = url.replace("<token>",",")
             print(url)
             # print(LDP(ui,os.path.join(os.path.join(data_path,di),"html.txt"),type="file"))
             # res = jailPhish(url,os.path.join(os.path.join(data_path,dir),"html.txt"),type="file")
@@ -48,7 +48,8 @@ def detect_exec(data_queue):
             else:
                 print(e)
                 # 搜索引擎屏蔽
-            fp_pre.write(url+"\t"+dir+"\t"+str(10)+"\t"+str(link_nums)+"\t"+str(e)+"\n")
+            # fp_pre.write(url+"\t"+dir+"\t"+str(10)+"\t"+str(link_nums)+"\t"+str(e)+"\n")
+            data_queue.put(item)
         fp_pre.close()
 def test():
     # 数据扩增
@@ -101,7 +102,7 @@ def test():
     logger.info("detection end...")
 
 def getTestData():
-    file_path = r"G:\bak\hp-f\phishDetection\data\normal_final.csv"
+    file_path = r"data\phish_final.csv"
     df = pd.read_csv(file_path)
     return df['dir'].values,df['url'].values
 
@@ -124,7 +125,7 @@ if __name__=="__main__":
     file_dirs,file_urls = getTestData()
     for di,ui in zip(file_dirs,file_urls):
         domian_queue.put([di,ui])
-    NUM = 1
+    NUM = 12
     detecTheads(detect_exec,NUM,domian_queue)
 
 

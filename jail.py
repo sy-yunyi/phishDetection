@@ -3,8 +3,57 @@ from utils import getFQDN,extractTitle,searchData,googleResult,pathDomain,extrac
 import hashlib
 import redis
 import json
+import asyncio
+import aiohttp
+from aiohttp import ClientSession
 
-pool = redis.ConnectionPool(host="127.0.0.1",port=6379,db=1,password="si1ex")
+
+pool = redis.ConnectionPool(host="127.0.0.1",port=6379,db=1)
+
+async def fetch_html(url:str,session:ClientSession,**kwargs) -> str:
+    url = url.replace("https","http")
+    try:
+        resp = await asyncio.wait_for(session.request(method="GET",url=url,verify_ssl=False,**kwargs),10)
+    except asyncio.TimeoutError as timeout:
+        print("timeout!")
+        return [],[],[],[]
+    else:
+        # resp.raise_for_status()
+        html = await resp.read()
+        au_link,styleu_link,jsu_link,imageu_link = extractURL(html,type="file")
+        return au_link,styleu_link,jsu_link,imageu_link
+
+async def parse_link(root_url:str,url:str,session:ClientSession,**kwargs):
+    res_id2 = hashlib.md5((url+root_url).encode()).hexdigest()
+    try:
+        au_link,styleu_link,jsu_link,imageu_link = await fetch_html(url,session,**kwargs)
+    except Exception as e:
+        print(e)
+        return None
+    else:
+        resdb = redis.Redis(connection_pool=pool)
+        resdb.set(res_id2,json.dumps({"links":[au_link,styleu_link,jsu_link,imageu_link],"lnum":sum([len(li) for li in [au_link,styleu_link,jsu_link,imageu_link]])}))
+        return None
+
+async def collect_url(url:str,urls:list):
+    async with ClientSession(trust_env = True) as session:
+        tasks = []
+        proxies ="http://127.0.0.1:1080"
+        # proxies = {
+        # "https": "http://127.0.0.1:1080",
+        # "http": "http://127.0.0.1:1080"
+        #     }
+        for ri in urls:
+            res_id2 = hashlib.md5((ri+url).encode()).hexdigest()
+            resdb = redis.Redis(connection_pool=pool)
+            if not resdb.get(res_id2):
+                tasks.append(parse_link(root_url = url,url=ri,session=session,proxy=proxies))
+        await asyncio.gather(*tasks)
+
+
+
+
+
 
 def jailJudge(url,path,results,type="URL"):
     proxies = {
@@ -21,6 +70,8 @@ def jailJudge(url,path,results,type="URL"):
     query_style_link = []
     query_js_link = []
     query_image_link = []
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    asyncio.run(collect_url(url,results))
     for ri in results:
         try:
             res_id2 = hashlib.md5((ri+url).encode()).hexdigest()

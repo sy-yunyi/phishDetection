@@ -22,7 +22,7 @@ def hhpSearchGoogle(keywords):
             }
     search_links = []
     try:
-        res = requests.get(url,proxies=proxies,timeout=10)
+        res = requests.get(url,proxies=proxies,timeout=10,verify=False)
         if res.status_code==200:
             snums = res.json()["searchInformation"]["totalResults"]
             if snums!="0":
